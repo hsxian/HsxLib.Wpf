@@ -10,6 +10,6 @@
     <Grid>
         <lib:ConveyorTray Name="ConveyorTry" HorizontalAlignment="Stretch" VerticalAlignment="Center" Height="300"></lib:ConveyorTray>
         <TextBlock x:Name="TimeTbk" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="#392f41" FontSize="20" FontWeight="Black"></TextBlock>
-        <Rectangle HorizontalAlignment="Center" Fill="Red" Width="1" VerticalAlignment="Center" Height="300"></Rectangle>
+        <Rectangle x:Name="Pointers" Fill="Red" Width="1" HorizontalAlignment="Left" VerticalAlignment="Center" Height="300"></Rectangle>
     </Grid>
 </Window>

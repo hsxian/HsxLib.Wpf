@@ -20,21 +20,21 @@ namespace HsxLib.Wpf.View.Conveyor
         public const int DefaultInertialMoveMaxCount = 90;
         private int _inertialMoveCount = DefaultInertialMoveMaxCount;
         private DispatcherTimer _dispatcherTimer;
-        private double _zero;
 
-        public double Zero
+        public double Zero { get; private set; }
+
+        public void SetZero(double zero, bool isFixCargo)
         {
-            get => _zero;
-            set
+            var delat = zero - Zero;
+            if (isFixCargo)
             {
-                _zero = value;
-
-                //var border = ExamineBorder(_zero);
-                //if (border != 0)
-                //{
-                //    MoveCargo(border, Zero);
-                //}
+                MoveCargo(delat, Zero);
             }
+            else
+            {
+                ValidMoveCargo(delat);
+            }
+            Zero = zero;
         }
 
         public double GetLeftOfBlank()
@@ -191,13 +191,14 @@ namespace HsxLib.Wpf.View.Conveyor
 
         private double ExamineBorder(double zero)
         {
-            if (TotalMovePiexl < MinLeftPiexl)
+            // move + zero
+            if (TotalMovePiexl < MinLeftPiexl - zero)
             {
                 return TotalMovePiexl - MinLeftPiexl + zero;
             }
-            if (TotalMovePiexl > MaxLeftPiexl)
+            if (TotalMovePiexl > MaxLeftPiexl - zero)
             {
-                return TotalMovePiexl - MaxLeftPiexl;
+                return TotalMovePiexl - MaxLeftPiexl + zero;
             }
             return 0;
         }
