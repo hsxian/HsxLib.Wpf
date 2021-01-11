@@ -23,7 +23,7 @@ namespace ConveyorApp
             AddTimeSlice(DateTime.Parse("2010/1/10 22:59:4"), DateTime.Parse("2010/1/11 1:3:4"), (Color)ColorConverter.ConvertFromString("#afdd22"), 20);
             AddTimeSlice(DateTime.Parse("2011/1/10 7:59:4"), DateTime.Parse("2011/1/10 10:3:4"), (Color)ColorConverter.ConvertFromString("#ed5736"), 20);
             ConveyorTry.MinLeftPiexl = 20;
-            ConveyorTry.MaxLeftPiexl = ConveyorTry.GetLeftOfBlank() - 30;
+            ConveyorTry.MaxLeftPiexl = ConveyorTry.GetPositionOfRightBlank() - 30;
             Loaded += MainWindow_Loaded;
             SizeChanged += MainWindow_SizeChanged;
             await Task.CompletedTask;
@@ -32,7 +32,7 @@ namespace ConveyorApp
         private void SetConveyorZero()
         {
             ConveyorTry.SetZero(ConveyorTry.ActualWidth / 4, false);
-            Pointers.Margin = new Thickness(ConveyorTry.Zero, 0, 0, 0);
+            Pointers.Margin = new Thickness(ConveyorTry.OriginPosition, 0, 0, 0);
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -43,12 +43,12 @@ namespace ConveyorApp
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             SetConveyorZero();
-            ConveyorTry.ValidMoveCargo(ConveyorTry.Zero);
+            ConveyorTry.ValidMoveCargos(ConveyorTry.OriginPosition);
         }
 
         private void AddTimeSlice(DateTime start, DateTime end, Color color, double marginLeft = 0)
         {
-            var time = new TimeSliceCargo { Background = new SolidColorBrush(color), Height = 100, CanvasLeft = ConveyorTry.GetLeftOfBlank() + marginLeft };
+            var time = new TimeSliceCargo { Background = new SolidColorBrush(color), Height = 100, CanvasLeft = ConveyorTry.GetPositionOfRightBlank() + marginLeft };
             time.SetTime(start, end);
             time.OnTrayMove += Time_OnTrayMove;
             ConveyorTry.AddCargos(time);

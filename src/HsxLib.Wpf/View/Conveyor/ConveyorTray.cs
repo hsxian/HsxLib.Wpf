@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,6 +13,7 @@ namespace HsxLib.Wpf.View.Conveyor
         protected Canvas TrayCvs { get; set; }
         public double MinLeftPiexl { get; set; }
         public double MaxLeftPiexl { get; set; }
+        public UIElementCollection Cargos => TrayCvs.Children;
         public double TotalMovePiexl { get; private set; }
         private Point _previousCvsMousePosition;
         private bool _isTrayCnsMouseDown;
@@ -21,23 +23,23 @@ namespace HsxLib.Wpf.View.Conveyor
         private int _inertialMoveCount = DefaultInertialMoveMaxCount;
         private DispatcherTimer _dispatcherTimer;
 
-        public double Zero { get; private set; }
+        public double OriginPosition { get; private set; }
 
-        public void SetZero(double zero, bool isFixCargo)
+        public void SetZero(double origin, bool isFixCargo)
         {
-            var delat = zero - Zero;
+            var delat = origin - OriginPosition;
             if (isFixCargo)
             {
-                MoveCargo(delat, Zero);
+                MoveCargos(delat, OriginPosition);
             }
             else
             {
-                ValidMoveCargo(delat);
+                ValidMoveCargos(delat);
             }
-            Zero = zero;
+            OriginPosition = origin;
         }
 
-        public double GetLeftOfBlank()
+        public double GetPositionOfRightBlank()
         {
             var ret = .0;
             foreach (CargoBase item in TrayCvs.Children)
@@ -76,14 +78,20 @@ namespace HsxLib.Wpf.View.Conveyor
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
-            var win = Application.Current.MainWindow;
             var mouseOwner = TrayCvs;
             mouseOwner.MouseLeftButtonDown += TrayCns_MouseLeftButtonDown;
             mouseOwner.MouseWheel += TrayCns_MouseWheel;
             mouseOwner.MouseMove += TrayCns_MouseMove;
             mouseOwner.MouseLeftButtonUp += TrayCns_MouseLeftButtonUp;
-            win.MouseLeave += TrayCvs_MouseLeave;
             AddChild(TrayCvs);
+            _ = TryFindWinThenInit();
+        }
+
+        private async Task TryFindWinThenInit()
+        {
+            await Task.Delay(100);
+            var win = EMA.ExtendedWPFVisualTreeHelper.WPFVisualFinders.FindParent<Window>(this) as FrameworkElement ?? this;
+            win.MouseLeave += TrayCvs_MouseLeave;
         }
 
         private void TrayCvs_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
@@ -95,7 +103,7 @@ namespace HsxLib.Wpf.View.Conveyor
         private void TrayCns_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             _isTrayCnsMouseDown = false;
-            ValidMoveCargo(e.Delta);
+            ValidMoveCargos(e.Delta);
         }
 
         private void TrayCns_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
@@ -106,7 +114,7 @@ namespace HsxLib.Wpf.View.Conveyor
                 _trayCnsDeltaHorizontalLatest = _trayCnsDeltaHorizontal = p.X - _previousCvsMousePosition.X;
                 //Debug.WriteLine(_trayCnsDeltaHorizontalLatest);
                 _previousCvsMousePosition = p;
-                ValidMoveCargo(_trayCnsDeltaHorizontal);
+                ValidMoveCargos(_trayCnsDeltaHorizontal);
             }
         }
 
@@ -133,7 +141,7 @@ namespace HsxLib.Wpf.View.Conveyor
             if (_inertialMoveCount-- > 1 && _trayCnsDeltaHorizontal != 0)
             {
                 _trayCnsDeltaHorizontal -= _trayCnsDeltaHorizontal / _inertialMoveCount * 2;
-                if (false == ValidMoveCargo(_trayCnsDeltaHorizontal))
+                if (false == ValidMoveCargos(_trayCnsDeltaHorizontal))
                 {
                     _trayCnsDeltaHorizontal = _inertialMoveCount = 0;
                 }
@@ -166,15 +174,15 @@ namespace HsxLib.Wpf.View.Conveyor
             }
         }
 
-        private bool CanMove(double delta, double zero)
+        private bool CanMove(double delta, double origin)
         {
-            var newLeft = TotalMovePiexl - delta + zero;
+            var newLeft = TotalMovePiexl - delta + origin;
             //Debug.WriteLine(newLeft);
             if (newLeft >= MinLeftPiexl && newLeft <= MaxLeftPiexl) return true;
             return false;
         }
 
-        private void MoveCargo(double delta, double zero)
+        private void MoveCargos(double delta, double origin)
         {
             TotalMovePiexl -= delta;
             //Debug.WriteLine(TotalMovePiexl);
@@ -182,43 +190,48 @@ namespace HsxLib.Wpf.View.Conveyor
             {
                 if (item.EnableMove)
                 {
-                    var left = Canvas.GetLeft(item);
-                    Canvas.SetLeft(item, left + delta);
-                    item.OnTrayMoving(zero - left);
+                    MoveCargo(item, delta, origin);
                 }
             }
         }
 
-        private double ExamineBorder(double zero)
+        public void MoveCargo(CargoBase cargo, double delta, double origin)
         {
-            // move + zero
-            if (TotalMovePiexl < MinLeftPiexl - zero)
+            var left = Canvas.GetLeft(cargo);
+            Canvas.SetLeft(cargo, left + delta);
+            cargo.CanvasLeft += delta;
+            cargo.OnTrayMoving(origin - left);
+        }
+
+        private double ExamineBorder(double origin)
+        {
+            if (TotalMovePiexl < MinLeftPiexl - origin)
             {
-                return TotalMovePiexl - MinLeftPiexl + zero;
+                return TotalMovePiexl - MinLeftPiexl + origin;
             }
-            if (TotalMovePiexl > MaxLeftPiexl - zero)
+            if (TotalMovePiexl > MaxLeftPiexl - origin)
             {
-                return TotalMovePiexl - MaxLeftPiexl + zero;
+                return TotalMovePiexl - MaxLeftPiexl + origin;
             }
             return 0;
         }
 
-        public bool ValidMoveCargo(double delta)
+        public bool ValidMoveCargos(double delta)
         {
             var ret = false;
             //Debug.WriteLine(delta);
-            if (CanMove(delta, Zero))
+            if (CanMove(delta, OriginPosition))
             {
-                MoveCargo(delta, Zero);
+                MoveCargos(delta, OriginPosition);
                 ret = true;
             }
             else
             {
-                var border = ExamineBorder(Zero);
+                var border = ExamineBorder(OriginPosition);
                 if (border != 0)
                 {
                     _inertialMoveCount = 0;
-                    MoveCargo(border, Zero);
+                    MoveCargos(border, OriginPosition);
                 }
             }
             return ret;

@@ -11,6 +11,6 @@ namespace HsxLib.Wpf.View.Conveyor
 
         public abstract double EffectiveWidthPixel { get; protected set; }
 
-        public abstract void OnTrayMoving(double cursorRelativeLeft);
+        public abstract void OnTrayMoving(double cursorRelativePosition);
     }
 }
