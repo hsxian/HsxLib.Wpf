@@ -10,8 +10,8 @@ namespace ConveyorApp.View
     {
         private DateTime _start;
         private DateTime _end;
-        private double _totalMinutes;
-        public int MinuteInterVal { get; set; } = 10;
+        private double _totalMilliseconds;
+        private int TimeInterval { get; set; } = 10 * 60 * 1000;
         public double TickPixel { get; set; } = 20;
         public override double EffectiveWidthPixel { get; protected set; }
 
@@ -28,8 +28,8 @@ namespace ConveyorApp.View
         public override void OnTrayMoving(double cursorRelativeLeft)
         {
             if (cursorRelativeLeft < 0 || cursorRelativeLeft > EffectiveWidthPixel) return;
-            var mins = cursorRelativeLeft / EffectiveWidthPixel * _totalMinutes;
-            var time = _start + TimeSpan.FromMinutes(mins);
+            var mins = cursorRelativeLeft / EffectiveWidthPixel * _totalMilliseconds;
+            var time = _start + TimeSpan.FromMilliseconds(mins);
             OnTrayMove?.Invoke(this, time);
         }
 
@@ -37,21 +37,21 @@ namespace ConveyorApp.View
         {
             _start = start;
             _end = end;
-            _totalMinutes = (end - start).TotalMinutes;
-            var start_1 = DateTime.MinValue + TimeSpan.FromMinutes((long)((start - DateTime.MinValue).TotalMinutes / MinuteInterVal) * MinuteInterVal + MinuteInterVal);
-            var end_1 = DateTime.MinValue + TimeSpan.FromMinutes((long)((end - DateTime.MinValue).TotalMinutes / MinuteInterVal) * MinuteInterVal);
-            var secs = (end_1 - start_1).TotalMinutes;
-            EffectiveWidthPixel = (end - start).TotalMinutes / MinuteInterVal * TickPixel;
+            _totalMilliseconds = (end - start).TotalMilliseconds;
+            var start_1 = DateTime.MinValue + TimeSpan.FromMilliseconds((long)((start - DateTime.MinValue).TotalMilliseconds / TimeInterval) * TimeInterval + TimeInterval);
+            var end_1 = DateTime.MinValue + TimeSpan.FromMilliseconds((long)((end - DateTime.MinValue).TotalMilliseconds / TimeInterval) * TimeInterval);
+            var secs = (end_1 - start_1).TotalMilliseconds;
+            EffectiveWidthPixel = (end - start).TotalMilliseconds / TimeInterval * TickPixel;
             Width = EffectiveWidthPixel;
-            var startTick = (start_1 - start).TotalMinutes * TickPixel / MinuteInterVal;
+            var startTick = (start_1 - start).TotalMilliseconds * TickPixel / TimeInterval;
             var count = 0;
             var fontMaxHeight = FontSize * 1.5;
             var topMM = Height - 10 - fontMaxHeight;
             var topHH = Height - 20 - fontMaxHeight;
             var topText = Height - 20;
-            for (int i = 0; i < secs + 1; i += MinuteInterVal)
+            for (int i = 0; i < secs + 1; i += TimeInterval)
             {
-                var curr = start_1.AddMinutes(i);
+                var curr = start_1.AddMilliseconds(i);
                 bool isHour = curr.Minute == 0;
 
                 AddTick(isHour ? 20 : 10, isHour ? topHH : topMM, startTick + count * TickPixel, isHour);
