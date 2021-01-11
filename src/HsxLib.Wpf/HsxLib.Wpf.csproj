@@ -72,6 +72,7 @@
     <Compile Include="Tool\UIElementHelper.cs" />
     <Compile Include="View\Conveyor\CargoBase.cs" />
     <Compile Include="View\Conveyor\ConveyorTray.cs" />
+    <Compile Include="View\Conveyor\VariableCargo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

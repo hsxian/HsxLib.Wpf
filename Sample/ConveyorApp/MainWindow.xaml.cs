@@ -1,4 +1,5 @@
 ﻿using ConveyorApp.View;
+using HsxLib.Wpf.View.Conveyor;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -22,6 +23,7 @@ namespace ConveyorApp
             AddTimeSlice(DateTime.Parse("2010/1/1 2:9:4"), DateTime.Parse("2010/1/1 5:9:4"), (Color)ColorConverter.ConvertFromString("#ffa631"));
             AddTimeSlice(DateTime.Parse("2010/1/10 22:59:4"), DateTime.Parse("2010/1/11 1:3:4"), (Color)ColorConverter.ConvertFromString("#afdd22"), 20);
             AddTimeSlice(DateTime.Parse("2011/1/10 7:59:4"), DateTime.Parse("2011/1/10 10:3:4"), (Color)ColorConverter.ConvertFromString("#ed5736"), 20);
+            ConveyorTry.AddCargos(new VariableCargo { Height = 50, Width = 100, Background = new SolidColorBrush(Colors.Gainsboro) });
             ConveyorTry.MinLeftPiexl = 20;
             ConveyorTry.MaxLeftPiexl = ConveyorTry.GetPositionOfRightBlank() - 30;
             Loaded += MainWindow_Loaded;
