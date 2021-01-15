@@ -56,6 +56,7 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model\Conveyor\SolveCrashType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -72,7 +73,8 @@
     <Compile Include="Tool\UIElementHelper.cs" />
     <Compile Include="View\Conveyor\CargoBase.cs" />
     <Compile Include="View\Conveyor\ConveyorTray.cs" />
-    <Compile Include="View\Conveyor\VariableCargo.cs" />
+    <Compile Include="View\Conveyor\TimeSliceCargo.cs" />
+    <Compile Include="View\Conveyor\VariableGridCargo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

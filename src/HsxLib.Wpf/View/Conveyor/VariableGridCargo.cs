@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using HsxLib.Wpf.Model.Conveyor;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -7,26 +8,36 @@ using System.Windows.Shapes;
 
 namespace HsxLib.Wpf.View.Conveyor
 {
-    public class VariableCargo : CargoBase
+    public class VariableGridCargo : CargoBase
     {
         public override double EffectiveWidthPixel { get; protected set; }
-        private Grid _mainGrid;
-        private Rectangle _leftRectangle;
-        private Rectangle _rightRectangle;
+        public Grid MainGrid { get; }
+        private readonly Rectangle _leftRectangle;
+        private readonly Rectangle _rightRectangle;
+        private readonly Rectangle _moveRectangle;
         private Rectangle _rectangleMouseDown;
         private Window _window;
         private Point _previousMousePoint;
+        public SolveCrashType SolveCrashType { get; set; }
 
-        public VariableCargo()
+        public VariableGridCargo()
         {
-            _mainGrid = new Grid { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
-            AddChild(_mainGrid);
+            MainGrid = new Grid { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
+            AddChild(MainGrid);
             _leftRectangle = CreatCommonRectangle();
             _leftRectangle.HorizontalAlignment = HorizontalAlignment.Left;
             _rightRectangle = CreatCommonRectangle();
             _rightRectangle.HorizontalAlignment = HorizontalAlignment.Right;
-            _mainGrid.Children.Add(_leftRectangle);
-            _mainGrid.Children.Add(_rightRectangle);
+
+            _moveRectangle = CreatCommonRectangle();
+            _moveRectangle.Width = 30;
+            _moveRectangle.Height = 4;
+            _moveRectangle.VerticalAlignment = VerticalAlignment.Top;
+            _moveRectangle.HorizontalAlignment = HorizontalAlignment.Center;
+
+            MainGrid.Children.Add(_moveRectangle);
+            MainGrid.Children.Add(_leftRectangle);
+            MainGrid.Children.Add(_rightRectangle);
 
             _ = TryFindWin();
         }
@@ -73,6 +84,13 @@ namespace HsxLib.Wpf.View.Conveyor
                     var w = Width + delta;
                     if (w <= 0) return;
                     Width = w;
+                }
+                else if (_rectangleMouseDown == _moveRectangle)
+                {
+                    Tray.MoveCargo(this, delta, Tray.OriginPosition);
+                    //var w = Width + delta;
+                    //if (w <= 0) return;
+                    //Width = w;
                 }
                 _previousMousePoint = p;
             }

@@ -168,6 +168,7 @@ namespace HsxLib.Wpf.View.Conveyor
             if (cargos == null) return;
             foreach (var item in cargos)
             {
+                item.Tray = this;
                 Canvas.SetTop(item, item.CanvasTop);
                 Canvas.SetLeft(item, item.CanvasLeft);
                 TrayCvs.Children.Add(item);
