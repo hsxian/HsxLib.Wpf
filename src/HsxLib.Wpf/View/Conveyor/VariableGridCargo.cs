@@ -1,4 +1,5 @@
 ﻿using HsxLib.Wpf.Model.Conveyor;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +20,10 @@ namespace HsxLib.Wpf.View.Conveyor
         private Window _window;
         private Point _previousMousePoint;
         public SolveCrashType SolveCrashType { get; set; }
+
+        public event Action<VariableGridCargo, double> OnLeftBorderChanged;
+
+        public event Action<VariableGridCargo, double> OnRightBorderChanged;
 
         public VariableGridCargo()
         {
@@ -72,18 +77,20 @@ namespace HsxLib.Wpf.View.Conveyor
                 {
                     var w = Width - delta;
                     if (w <= 0) return;
-                    Width = w;
+                    EffectiveWidthPixel = Width = w;
                     var tray = EMA.ExtendedWPFVisualTreeHelper.WPFVisualFinders.FindParent<ConveyorTray>(this);
                     if (tray != null)
                     {
                         tray.MoveCargo(this, delta, tray.OriginPosition);
                     }
+                    OnLeftBorderChanged?.Invoke(this, delta);
                 }
                 else if (_rectangleMouseDown == _rightRectangle)
                 {
                     var w = Width + delta;
                     if (w <= 0) return;
-                    Width = w;
+                    EffectiveWidthPixel = Width = w;
+                    OnRightBorderChanged?.Invoke(this, delta);
                 }
                 else if (_rectangleMouseDown == _moveRectangle)
                 {
@@ -100,7 +107,7 @@ namespace HsxLib.Wpf.View.Conveyor
         {
             var ret = new Rectangle
             {
-                Width = 2,
+                Width = 3,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Cursor = Cursors.SizeWE,
                 Fill = new SolidColorBrush(Color.FromArgb(50, 0, 0, 0))

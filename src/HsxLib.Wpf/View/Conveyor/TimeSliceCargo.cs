@@ -6,14 +6,13 @@ using System.Windows.Shapes;
 
 namespace ConveyorApp.View
 {
-    public class TimeSliceCargo : CargoBase
+    public class TimeSliceCargo : VariableGridCargo
     {
         private DateTime _start;
         private DateTime _end;
         private double _totalMilliseconds;
         private int TimeInterval { get; set; } = 10 * 60 * 1000;
         public double TickPixel { get; set; } = 20;
-        public override double EffectiveWidthPixel { get; protected set; }
 
         public event Action<TimeSliceCargo, DateTime> OnTrayMove;
 
@@ -22,7 +21,21 @@ namespace ConveyorApp.View
         public TimeSliceCargo()
         {
             MainCvs = new Canvas { VerticalAlignment = System.Windows.VerticalAlignment.Top };
-            AddChild(MainCvs);
+            MainGrid.Children.Add(MainCvs);
+            OnLeftBorderChanged += TimeSliceCargo_OnLeftBorderChanged;
+            OnRightBorderChanged += TimeSliceCargo_OnRightBorderChanged; ;
+        }
+
+        private void TimeSliceCargo_OnRightBorderChanged(VariableGridCargo arg1, double arg2)
+        {
+            var end = _end + PixelToTimeSpan(arg2);
+            SetTime(_start, end);
+        }
+
+        private void TimeSliceCargo_OnLeftBorderChanged(VariableGridCargo arg1, double arg2)
+        {
+            var start = _start + PixelToTimeSpan(arg2);
+            SetTime(start, _end);
         }
 
         public override void OnTrayMoving(double cursorRelativeLeft)
@@ -33,15 +46,40 @@ namespace ConveyorApp.View
             OnTrayMove?.Invoke(this, time);
         }
 
+        private double PixelToMillisecond(double pixel)
+        {
+            return pixel / TickPixel * TimeInterval;
+        }
+
+        private TimeSpan PixelToTimeSpan(double pixel)
+        {
+            return TimeSpan.FromMilliseconds(PixelToMillisecond(pixel));
+        }
+
+        private double MillisecondToPixel(double mill)
+        {
+            return mill / TimeInterval * TickPixel;
+        }
+
+        private double TimeSpanToPixel(TimeSpan ts)
+        {
+            return MillisecondToPixel(ts.TotalMilliseconds);
+        }
+
+        private void Reset(DateTime start, DateTime end)
+        {
+        }
+
         public void SetTime(DateTime start, DateTime end)
         {
+            MainCvs.Children.Clear();
             _start = start;
             _end = end;
             _totalMilliseconds = (end - start).TotalMilliseconds;
             var start_1 = DateTime.MinValue + TimeSpan.FromMilliseconds((long)((start - DateTime.MinValue).TotalMilliseconds / TimeInterval) * TimeInterval + TimeInterval);
             var end_1 = DateTime.MinValue + TimeSpan.FromMilliseconds((long)((end - DateTime.MinValue).TotalMilliseconds / TimeInterval) * TimeInterval);
             var secs = (end_1 - start_1).TotalMilliseconds;
-            EffectiveWidthPixel = (end - start).TotalMilliseconds / TimeInterval * TickPixel;
+            EffectiveWidthPixel = TimeSpanToPixel(end - start);
             Width = EffectiveWidthPixel;
             var startTick = (start_1 - start).TotalMilliseconds * TickPixel / TimeInterval;
             var count = 0;
@@ -58,9 +96,6 @@ namespace ConveyorApp.View
                 AddText(curr.ToString(isHour ? "HH" : "mm"), topText, startTick + count * TickPixel, isHour);
                 count++;
             }
-
-            AddTick(30, 0, 0, true);
-            AddTick(30, 0, EffectiveWidthPixel - 1, true);
         }
 
         private void AddTick(double height, double top, double left, bool isHour)
