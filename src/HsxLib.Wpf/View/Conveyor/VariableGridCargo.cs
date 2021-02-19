@@ -17,7 +17,7 @@ namespace HsxLib.Wpf.View.Conveyor
         private readonly Rectangle _rightRectangle;
         private readonly Rectangle _moveRectangle;
         private Rectangle _rectangleMouseDown;
-        private Window _window;
+        protected Window _window;
         private Point _previousMousePoint;
         public SolveCrashType SolveCrashType { get; set; }
 

@@ -1,5 +1,6 @@
 ﻿using HsxLib.Wpf.View.Conveyor;
 using System;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -10,7 +11,6 @@ namespace ConveyorApp.View
     {
         private DateTime _start;
         private DateTime _end;
-        private double _totalMilliseconds;
         private int TimeInterval { get; set; } = 10 * 60 * 1000;
         public double TickPixel { get; set; } = 20;
 
@@ -28,21 +28,21 @@ namespace ConveyorApp.View
 
         private void TimeSliceCargo_OnRightBorderChanged(VariableGridCargo arg1, double arg2)
         {
-            var end = _end + PixelToTimeSpan(arg2);
-            SetTime(_start, end);
+            _end = _end + PixelToTimeSpan(arg2);
+            SetVisualTime(_start, _end);
         }
 
         private void TimeSliceCargo_OnLeftBorderChanged(VariableGridCargo arg1, double arg2)
         {
-            var start = _start + PixelToTimeSpan(arg2);
-            SetTime(start, _end);
+            _start = _start + PixelToTimeSpan(arg2);
+            SetVisualTime(_start, _end);
         }
 
         public override void OnTrayMoving(double cursorRelativeLeft)
         {
+            SetVisualTime(_start, _end);
             if (cursorRelativeLeft < 0 || cursorRelativeLeft > EffectiveWidthPixel) return;
-            var mins = cursorRelativeLeft / EffectiveWidthPixel * _totalMilliseconds;
-            var time = _start + TimeSpan.FromMilliseconds(mins);
+            var time = _start + PixelToTimeSpan(cursorRelativeLeft);
             OnTrayMove?.Invoke(this, time);
         }
 
@@ -66,42 +66,63 @@ namespace ConveyorApp.View
             return MillisecondToPixel(ts.TotalMilliseconds);
         }
 
-        private void Reset(DateTime start, DateTime end)
+        private void SetVisualTime(DateTime start, DateTime end)
         {
-        }
-
-        public void SetTime(DateTime start, DateTime end)
-        {
-            MainCvs.Children.Clear();
-            _start = start;
-            _end = end;
-            _totalMilliseconds = (end - start).TotalMilliseconds;
+            for (int i = 0; i < MainCvs.Children.Count; i++)
+            {
+                if (MainCvs.Children[i] is FrameworkElement framework && framework.Name == "tick")
+                {
+                    MainCvs.Children.RemoveAt(i--);
+                }
+            }
             var start_1 = DateTime.MinValue + TimeSpan.FromMilliseconds((long)((start - DateTime.MinValue).TotalMilliseconds / TimeInterval) * TimeInterval + TimeInterval);
-            var end_1 = DateTime.MinValue + TimeSpan.FromMilliseconds((long)((end - DateTime.MinValue).TotalMilliseconds / TimeInterval) * TimeInterval);
-            var secs = (end_1 - start_1).TotalMilliseconds;
-            EffectiveWidthPixel = TimeSpanToPixel(end - start);
-            Width = EffectiveWidthPixel;
-            var startTick = (start_1 - start).TotalMilliseconds * TickPixel / TimeInterval;
-            var count = 0;
+            var startTick = TimeSpanToPixel(start_1 - start);
             var fontMaxHeight = FontSize * 1.5;
             var topMM = Height - 10 - fontMaxHeight;
             var topHH = Height - 20 - fontMaxHeight;
             var topText = Height - 20;
-            for (int i = 0; i < secs + 1; i += TimeInterval)
+
+            #region 只显示窗体可视范围内的时间刻度（防止刻度过多爆内存）
+
+            var minLeft = CanvasLeft + startTick;
+            if (minLeft < 0)
             {
-                var curr = start_1.AddMilliseconds(i);
+                minLeft += (int)((-CanvasLeft) / TickPixel) * TickPixel;
+            }
+            var maxLeft = CanvasLeft + EffectiveWidthPixel;
+            var winW = _window?.ActualWidth ?? SystemParameters.VirtualScreenWidth;
+            if (maxLeft > winW)
+            {
+                maxLeft = winW;
+            }
+
+            #endregion 只显示窗体可视范围内的时间刻度（防止刻度过多爆内存）
+
+            for (double absLeft = minLeft; absLeft < maxLeft; absLeft += TickPixel)
+            {
+                var left = absLeft - CanvasLeft;
+                var curr = start + PixelToTimeSpan(left);
                 bool isHour = curr.Minute == 0;
 
-                AddTick(isHour ? 20 : 10, isHour ? topHH : topMM, startTick + count * TickPixel, isHour);
-                AddText(curr.ToString(isHour ? "HH" : "mm"), topText, startTick + count * TickPixel, isHour);
-                count++;
+                AddTick(isHour ? 20 : 10, isHour ? topHH : topMM, left, isHour);
+                AddText(curr.ToString(isHour ? "HH" : "mm"), topText, left, isHour);
             }
+        }
+
+        public void SetTime(DateTime start, DateTime end)
+        {
+            _start = start;
+            _end = end;
+            EffectiveWidthPixel = TimeSpanToPixel(end - start);
+            Width = EffectiveWidthPixel;
+            SetVisualTime(_start, _end);
         }
 
         private void AddTick(double height, double top, double left, bool isHour)
         {
             var rect = new Rectangle
             {
+                Name = "tick",
                 Width = 1,
                 Height = height,
                 Fill = new SolidColorBrush(Color.FromRgb(0, 0, 0)),
@@ -115,6 +136,7 @@ namespace ConveyorApp.View
         {
             var tbk = new TextBlock
             {
+                Name = "tick",
                 Text = text
             };
             Canvas.SetTop(tbk, top);
